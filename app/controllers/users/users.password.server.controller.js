@@ -5,13 +5,15 @@
  */
 var _ = require('lodash'),
 	errorHandler = require('../errors.server.controller'),
-	mongoose = require('mongoose'),
+//	mongoose = require('mongoose'),
 	passport = require('passport'),
-	User = mongoose.model('User'),
+//	User = mongoose.model('User'),
 	config = require('../../../config/config'),
 	nodemailer = require('nodemailer'),
 	async = require('async'),
-	crypto = require('crypto');
+	crypto = require('crypto'),
+	db = require('../../../config/mysql'),
+	User = db.User;
 
 var smtpTransport = nodemailer.createTransport(config.mailer.options);
 

@@ -5,14 +5,16 @@
  */
 var _ = require('lodash'),
 	errorHandler = require('../errors.server.controller.js'),
-	mongoose = require('mongoose'),
+	//	mongoose = require('mongoose'),
 	passport = require('passport'),
-	User = mongoose.model('User');
+	//	User = mongoose.model('User');
+	db = require('../../../config/mysql'),
+	User = db.User;
 
 /**
  * Update user details
  */
-exports.update = function(req, res) {
+exports.update = function (req, res) {
 	// Init Variables
 	var user = req.user;
 	var message = null;
@@ -26,13 +28,13 @@ exports.update = function(req, res) {
 		user.updated = Date.now();
 		user.displayName = user.firstName + ' ' + user.lastName;
 
-		user.save(function(err) {
+		user.save(function (err) {
 			if (err) {
 				return res.status(400).send({
 					message: errorHandler.getErrorMessage(err)
 				});
 			} else {
-				req.login(user, function(err) {
+				req.login(user, function (err) {
 					if (err) {
 						res.status(400).send(err);
 					} else {
@@ -51,6 +53,6 @@ exports.update = function(req, res) {
 /**
  * Send User
  */
-exports.me = function(req, res) {
+exports.me = function (req, res) {
 	res.json(req.user || null);
 };

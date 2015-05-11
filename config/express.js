@@ -16,20 +16,24 @@ var fs = require('fs'),
 	cookieParser = require('cookie-parser'),
 	helmet = require('helmet'),
 	passport = require('passport'),
-	mongoStore = require('connect-mongo')({
-		session: session
-	}),
+	SequelizeStore = require('connect-session-sequelize')(session.Store),
 	flash = require('connect-flash'),
 	config = require('./config'),
 	consolidate = require('consolidate'),
 	path = require('path');
 
-module.exports = function(db) {
+module.exports = function (db) {
+	
+	var sequelizeStore = new SequelizeStore({
+		db: db.sequelize
+	});
+	sequelizeStore.sync();
+	
 	// Initialize express app
 	var app = express();
 
 	// Globbing model files
-	config.getGlobbedFiles('./app/models/**/*.js').forEach(function(modelPath) {
+	config.getGlobbedFiles('./app/models/**/*.js').forEach(function (modelPath) {
 		require(path.resolve(modelPath));
 	});
 
@@ -42,7 +46,7 @@ module.exports = function(db) {
 	app.locals.cssFiles = config.getCSSAssets();
 
 	// Passing the request url to environment locals
-	app.use(function(req, res, next) {
+	app.use(function (req, res, next) {
 		res.locals.url = req.protocol + '://' + req.headers.host + req.url;
 		next();
 	});
@@ -50,7 +54,7 @@ module.exports = function(db) {
 	// Should be placed before express.static
 	app.use(compression({
 		// only compress files for the following content types
-		filter: function(req, res) {
+		filter: function (req, res) {
 			return (/json|text|javascript|css/).test(res.getHeader('Content-Type'));
 		},
 		// zlib option for compression level
@@ -103,10 +107,7 @@ module.exports = function(db) {
 		saveUninitialized: true,
 		resave: true,
 		secret: config.sessionSecret,
-		store: new mongoStore({
-			db: db.connection.db,
-			collection: config.sessionCollection
-		}),
+		store: sequelizeStore,
 		cookie: config.sessionCookie,
 		name: config.sessionName
 	}));
@@ -119,12 +120,12 @@ module.exports = function(db) {
 	app.use(flash());
 
 	// Globbing routing files
-	config.getGlobbedFiles('./app/routes/**/*.js').forEach(function(routePath) {
+	config.getGlobbedFiles('./app/routes/**/*.js').forEach(function (routePath) {
 		require(path.resolve(routePath))(app);
 	});
 
 	// Assume 'not found' in the error msgs is a 404. this is somewhat silly, but valid, you can do whatever you like, set properties, use instanceof etc.
-	app.use(function(err, req, res, next) {
+	app.use(function (err, req, res, next) {
 		// If the error object doesn't exists
 		if (!err) return next();
 
@@ -138,7 +139,7 @@ module.exports = function(db) {
 	});
 
 	// Assume 404 since no middleware responded
-	app.use(function(req, res) {
+	app.use(function (req, res) {
 		res.status(404).render('404', {
 			url: req.originalUrl,
 			error: 'Not Found'

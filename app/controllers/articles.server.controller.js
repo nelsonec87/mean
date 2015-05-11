@@ -3,19 +3,20 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-	errorHandler = require('./errors.server.controller'),
-	Article = mongoose.model('Article'),
+var errorHandler = require('./errors.server.controller'),
+	//	Article = mongoose.model('Article'),
+	db = require('../../config/mysql'),
+	Article = db.Article,
 	_ = require('lodash');
 
 /**
  * Create a article
  */
-exports.create = function(req, res) {
+exports.create = function (req, res) {
 	var article = new Article(req.body);
 	article.user = req.user;
 
-	article.save(function(err) {
+	article.save(function (err) {
 		if (err) {
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
@@ -29,19 +30,19 @@ exports.create = function(req, res) {
 /**
  * Show the current article
  */
-exports.read = function(req, res) {
+exports.read = function (req, res) {
 	res.json(req.article);
 };
 
 /**
  * Update a article
  */
-exports.update = function(req, res) {
+exports.update = function (req, res) {
 	var article = req.article;
 
 	article = _.extend(article, req.body);
 
-	article.save(function(err) {
+	article.save(function (err) {
 		if (err) {
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
@@ -55,10 +56,10 @@ exports.update = function(req, res) {
 /**
  * Delete an article
  */
-exports.delete = function(req, res) {
+exports.delete = function (req, res) {
 	var article = req.article;
 
-	article.remove(function(err) {
+	article.remove(function (err) {
 		if (err) {
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
@@ -72,8 +73,8 @@ exports.delete = function(req, res) {
 /**
  * List of Articles
  */
-exports.list = function(req, res) {
-	Article.find().sort('-created').populate('user', 'displayName').exec(function(err, articles) {
+exports.list = function (req, res) {
+	Article.find().sort('-created').populate('user', 'displayName').exec(function (err, articles) {
 		if (err) {
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
@@ -87,7 +88,7 @@ exports.list = function(req, res) {
 /**
  * Article middleware
  */
-exports.articleByID = function(req, res, next, id) {
+exports.articleByID = function (req, res, next, id) {
 
 	if (!mongoose.Types.ObjectId.isValid(id)) {
 		return res.status(400).send({
@@ -95,7 +96,7 @@ exports.articleByID = function(req, res, next, id) {
 		});
 	}
 
-	Article.findById(id).populate('user', 'displayName').exec(function(err, article) {
+	Article.findById(id).populate('user', 'displayName').exec(function (err, article) {
 		if (err) return next(err);
 		if (!article) {
 			return res.status(404).send({
@@ -110,7 +111,7 @@ exports.articleByID = function(req, res, next, id) {
 /**
  * Article authorization middleware
  */
-exports.hasAuthorization = function(req, res, next) {
+exports.hasAuthorization = function (req, res, next) {
 	if (req.article.user.id !== req.user.id) {
 		return res.status(403).send({
 			message: 'User is not authorized'

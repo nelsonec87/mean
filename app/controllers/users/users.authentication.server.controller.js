@@ -5,9 +5,9 @@
  */
 var _ = require('lodash'),
 	errorHandler = require('../errors.server.controller'),
-	mongoose = require('mongoose'),
 	passport = require('passport'),
-	User = mongoose.model('User');
+	db = require('../../../config/mysql'),
+	User = db.User;
 
 /**
  * Signup
@@ -15,9 +15,8 @@ var _ = require('lodash'),
 exports.signup = function(req, res) {
 	// For security measurement we remove the roles from the req.body object
 	delete req.body.roles;
-
 	// Init Variables
-	var user = new User(req.body);
+	var user = User.build(req.body);
 	var message = null;
 
 	// Add missing user fields
@@ -25,7 +24,7 @@ exports.signup = function(req, res) {
 	user.displayName = user.firstName + ' ' + user.lastName;
 
 	// Then save the user
-	user.save(function(err) {
+	user.save().then(function(user, err) {
 		if (err) {
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
@@ -73,6 +72,7 @@ exports.signin = function(req, res, next) {
  * Signout
  */
 exports.signout = function(req, res) {
+	console.log('saindo');
 	req.logout();
 	res.redirect('/');
 };
