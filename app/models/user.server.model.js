@@ -62,7 +62,7 @@ module.exports = function (sequelize, DataTypes) {
 						username: possibleUsername
 					}).then(function (user, err) {
 
-						console.log('check err nao existe');
+//						console.log('check err nao existe');
 						if (!err) {
 							if (!user) {
 								callback(possibleUsername);

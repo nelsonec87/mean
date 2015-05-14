@@ -5,7 +5,7 @@ var Sequelize = require('sequelize'),
 
 var db = {};
 
-var sequelize = new Sequelize("mean", "root", "root", { "dialect": "mysql" });
+var sequelize = new Sequelize("mean", "root", "senha", { "dialect": "mysql" });
 
 fs
 	.readdirSync(__dirname + '/../app/models')

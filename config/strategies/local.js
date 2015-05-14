@@ -18,10 +18,7 @@ module.exports = function () {
 		function (username, password, done) {
 			User.findOne({
 				username: username
-			}, function (err, user) {
-					if (err) {
-						return done(err);
-					}
+			}).then(function (user) {
 					if (!user) {
 						return done(null, false, {
 							message: 'Unknown user or invalid password'
