@@ -15,8 +15,35 @@ var validateLocalStrategyProperty = function (msg) {
  * A Validation function for local strategy password
  */
 var validateLocalStrategyPassword = function (password) {
-	return (this.provider !== 'local' || (password && password.length > 6));
+	if (this.provider == 'local' && (!password || password.length < 6))
+		throw new Error('Password should be longer');;
 };
+
+/**
+ *	Use TEXT columns as JSON
+ */
+var jsonGet = function (property) {
+	return function () {
+		console.log(this);
+		var val = this.getDataValue(property);
+		if (val !== "" && val !== undefined)
+			return JSON.parse(this.getDataValue(property));
+		else return undefined;
+	};
+};
+
+var jsonSet = function (property) {
+	return function (val) {
+		if (val != undefined)
+			this.setDataValue(property, JSON.stringify(val));
+		else
+			this.setDataValue(property, 'null');
+	};
+};
+
+/**
+ * Hook
+ */
 
 var preSave = function (user, options, fn) {
 	if (user.password && user.password.length > 6) {
@@ -50,18 +77,45 @@ module.exports = function (sequelize, DataTypes) {
 		},
 		username: {
 			type: DataTypes.STRING,
-			unique: {msg: 'This email is already in use'},
+			unique: { msg: 'This email is already in use' },
 			validation: { notEmpty: true }
 		},
-		password: DataTypes.TEXT,
-		salt: DataTypes.TEXT,
-		provider: DataTypes.TEXT,
-		providerData: DataTypes.TEXT,
-		additionalProvidersData: DataTypes.TEXT,
-		roles: DataTypes.TEXT,
+		password: {
+			type: DataTypes.STRING,
+			defaultValue: '',
+			validate: { local: validateLocalStrategyPassword }
+		},
+		salt: DataTypes.STRING,
+		provider: {
+			type: DataTypes.STRING,
+			validate: { notEmpty: { msg: 'Provider is required' } }
+		},
+		providerData: {
+			type: DataTypes.TEXT,
+			get: jsonGet('providerData'),
+			set: jsonSet('providerData') 
+		},
+		additionalProvidersData: {
+			type: DataTypes.TEXT,
+			get: jsonGet('additionalProvidersData'),
+			set: jsonSet('additionalProvidersData')
+		},
+		roles: {
+			type: DataTypes.TEXT,
+			get: jsonGet('roles'),
+			set: jsonSet('roles')
+		},
+		/*
+		roles: {
+			type: [{
+				type: String,
+				enum: ['user', 'admin']
+			}],
+			default: ['user']
+		},*/
 		/* For reset password */
-		resetPasswordToken: DataTypes.TEXT,
-		resetPasswordExpires: DataTypes.TEXT
+		resetPasswordToken: DataTypes.STRING,
+		resetPasswordExpires: DataTypes.DATE
 	}, {
 			instanceMethods: {
 				hashPassword: function (password) {
