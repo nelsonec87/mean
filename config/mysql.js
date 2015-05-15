@@ -1,11 +1,12 @@
 var Sequelize = require('sequelize'),
 	fs = require('fs'),
-	path = require('path');
+	path = require('path'),
+	config = require('./config');
 
 
 var db = {};
 
-var sequelize = new Sequelize("mean", "root", "root", { "dialect": "mysql" });
+var sequelize = new Sequelize(config.db.db, config.db.user, config.db.pass, {host: config.db.host, "dialect": "mysql" });
 
 fs
 	.readdirSync(__dirname + '/../app/models')

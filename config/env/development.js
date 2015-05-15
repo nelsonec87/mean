@@ -2,11 +2,10 @@
 
 module.exports = {
 	db: {
-		uri: 'mongodb://localhost/mean-dev',
-		options: {
-			user: '',
-			pass: ''
-		}
+			host: 'localhost',
+			db:'mean',
+			user: 'root',
+			pass: 'senha'
 	},
 	log: {
 		// Can specify one of 'combined', 'common', 'dev', 'short', 'tiny'

@@ -3,8 +3,12 @@ var crypto = require('crypto');
 /** 
  * A Validation function for local strategy properties
  */
-var validateLocalStrategyProperty = function (property) {
-	return ((this.provider !== 'local' && !this.updated) || property.length);
+
+var validateLocalStrategyProperty = function (msg) {
+	return function (property) {
+		if (this.provider == 'local' && !property.length)
+			throw new Error(msg);
+	};
 };
 
 /**
@@ -25,16 +29,33 @@ var preSave = function (user, options, fn) {
 
 module.exports = function (sequelize, DataTypes) {
 	var User = sequelize.define('User', {
-		firstName: DataTypes.TEXT,
-		lastName: DataTypes.TEXT,
-		displayName: DataTypes.TEXT,
-		email: DataTypes.TEXT,
-		username: DataTypes.TEXT,
+		firstName: {
+			type: DataTypes.STRING,
+			defaultValue: '',
+			validate: { local: validateLocalStrategyProperty('Please fill in your first name') }
+		},
+		lastName: {
+			type: DataTypes.STRING,
+			defaultValue: '',
+			validate: { local: validateLocalStrategyProperty('Please fill in your last name') }
+		},
+		displayName: DataTypes.STRING,
+		email: {
+			type: DataTypes.STRING,
+			defaultValue: '',
+			validate: {
+				local: validateLocalStrategyProperty('Please fill in your Email'),
+				isEmail: { msg: 'Please fill a valid email address' }
+			}
+		},
+		username: {
+			type: DataTypes.STRING,
+			unique: {msg: 'This email is already in use'},
+			validation: { notEmpty: true }
+		},
 		password: DataTypes.TEXT,
 		salt: DataTypes.TEXT,
 		provider: DataTypes.TEXT,
-		firstName: DataTypes.TEXT,
-		firstName: DataTypes.TEXT,
 		providerData: DataTypes.TEXT,
 		additionalProvidersData: DataTypes.TEXT,
 		roles: DataTypes.TEXT,
@@ -62,7 +83,7 @@ module.exports = function (sequelize, DataTypes) {
 						username: possibleUsername
 					}).then(function (user, err) {
 
-//						console.log('check err nao existe');
+						//						console.log('check err nao existe');
 						if (!err) {
 							if (!user) {
 								callback(possibleUsername);

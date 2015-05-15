@@ -12,7 +12,7 @@ var _ = require('lodash'),
 /**
  * Signup
  */
-exports.signup = function(req, res) {
+exports.signup = function (req, res) {
 	// For security measurement we remove the roles from the req.body object
 	delete req.body.roles;
 	// Init Variables
@@ -24,32 +24,36 @@ exports.signup = function(req, res) {
 	user.displayName = user.firstName + ' ' + user.lastName;
 
 	// Then save the user
-	user.save().then(function(user, err) {
-		if (err) {
+	user.save().then(function (user) {
+		// Remove sensitive data before login
+		user.password = undefined;
+		user.salt = undefined;
+
+		req.login(user, function (err) {
+			if (err) {
+				res.status(400).send(err);
+			} else {
+				res.json(user);
+			}
+		});
+	}).catch(function (err) {
+		console.error('err', err, 'errjson', JSON.stringify(err));
+		if (err.errors)
+			return res.status(400).send({
+				messages: err.errors.map(function(x){ return x.message; })
+			});
+		else
 			return res.status(400).send({
 				message: errorHandler.getErrorMessage(err)
 			});
-		} else {
-			// Remove sensitive data before login
-			user.password = undefined;
-			user.salt = undefined;
-
-			req.login(user, function(err) {
-				if (err) {
-					res.status(400).send(err);
-				} else {
-					res.json(user);
-				}
-			});
-		}
 	});
 };
 
 /**
  * Signin after passport authentication
  */
-exports.signin = function(req, res, next) {
-	passport.authenticate('local', function(err, user, info) {
+exports.signin = function (req, res, next) {
+	passport.authenticate('local', function (err, user, info) {
 		if (err || !user) {
 			res.status(400).send(info);
 		} else {
@@ -57,7 +61,7 @@ exports.signin = function(req, res, next) {
 			user.password = undefined;
 			user.salt = undefined;
 
-			req.login(user, function(err) {
+			req.login(user, function (err) {
 				if (err) {
 					res.status(400).send(err);
 				} else {
@@ -71,7 +75,7 @@ exports.signin = function(req, res, next) {
 /**
  * Signout
  */
-exports.signout = function(req, res) {
+exports.signout = function (req, res) {
 	req.logout();
 	res.redirect('/');
 };
@@ -79,13 +83,13 @@ exports.signout = function(req, res) {
 /**
  * OAuth callback
  */
-exports.oauthCallback = function(strategy) {
-	return function(req, res, next) {
-		passport.authenticate(strategy, function(err, user, redirectURL) {
+exports.oauthCallback = function (strategy) {
+	return function (req, res, next) {
+		passport.authenticate(strategy, function (err, user, redirectURL) {
 			if (err || !user) {
 				return res.redirect('/#!/signin');
 			}
-			req.login(user, function(err) {
+			req.login(user, function (err) {
 				if (err) {
 					return res.redirect('/#!/signin');
 				}
@@ -99,7 +103,7 @@ exports.oauthCallback = function(strategy) {
 /**
  * Helper function to save or update a OAuth user profile
  */
-exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
+exports.saveOAuthUserProfile = function (req, providerUserProfile, done) {
 	if (!req.user) {
 		// Define a search query fields
 		var searchMainProviderIdentifierField = 'providerData.' + providerUserProfile.providerIdentifierField;
@@ -119,14 +123,14 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 			$or: [mainProviderSearchQuery, additionalProviderSearchQuery]
 		};
 
-		User.findOne(searchQuery, function(err, user) {
+		User.findOne(searchQuery, function (err, user) {
 			if (err) {
 				return done(err);
 			} else {
 				if (!user) {
 					var possibleUsername = providerUserProfile.username || ((providerUserProfile.email) ? providerUserProfile.email.split('@')[0] : '');
 
-					User.findUniqueUsername(possibleUsername, null, function(availableUsername) {
+					User.findUniqueUsername(possibleUsername, null, function (availableUsername) {
 						user = new User({
 							firstName: providerUserProfile.firstName,
 							lastName: providerUserProfile.lastName,
@@ -138,7 +142,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 						});
 
 						// And save the user
-						user.save(function(err) {
+						user.save(function (err) {
 							return done(err, user);
 						});
 					});
@@ -161,7 +165,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 			user.markModified('additionalProvidersData');
 
 			// And save the user
-			user.save(function(err) {
+			user.save(function (err) {
 				return done(err, user, '/#!/settings/accounts');
 			});
 		} else {
@@ -173,7 +177,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 /**
  * Remove OAuth provider
  */
-exports.removeOAuthProvider = function(req, res, next) {
+exports.removeOAuthProvider = function (req, res, next) {
 	var user = req.user;
 	var provider = req.param('provider');
 
@@ -186,13 +190,13 @@ exports.removeOAuthProvider = function(req, res, next) {
 			user.markModified('additionalProvidersData');
 		}
 
-		user.save(function(err) {
+		user.save(function (err) {
 			if (err) {
 				return res.status(400).send({
 					message: errorHandler.getErrorMessage(err)
 				});
 			} else {
-				req.login(user, function(err) {
+				req.login(user, function (err) {
 					if (err) {
 						res.status(400).send(err);
 					} else {
