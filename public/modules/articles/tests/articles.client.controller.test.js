@@ -101,7 +101,7 @@
 
 			// Create a sample article response
 			var sampleArticleResponse = new Articles({
-				_id: '525cf20451979dea2c000001',
+				id: '525cf20451979dea2c000001',
 				title: 'An Article about MEAN',
 				content: 'MEAN rocks!'
 			});
@@ -128,7 +128,7 @@
 		it('$scope.update() should update a valid article', inject(function(Articles) {
 			// Define a sample article put data
 			var sampleArticlePutData = new Articles({
-				_id: '525cf20451979dea2c000001',
+				id: '525cf20451979dea2c000001',
 				title: 'An Article about MEAN',
 				content: 'MEAN Rocks!'
 			});
@@ -150,7 +150,7 @@
 		it('$scope.remove() should send a DELETE request with a valid articleId and remove the article from the scope', inject(function(Articles) {
 			// Create new article object
 			var sampleArticle = new Articles({
-				_id: '525a8422f6d0f87f0e407a33'
+				id: '525a8422f6d0f87f0e407a33'
 			});
 
 			// Create new articles array and include the article

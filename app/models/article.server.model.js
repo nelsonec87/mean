@@ -1,9 +1,21 @@
-module.exports = function(sequelize, DataTypes) {
-	return sequelize.define('Session', {
-		sid: {
+module.exports = function (sequelize, DataTypes) {
+	return sequelize.define('Article', {
+		title: {
 			type: DataTypes.STRING,
-			primaryKey: true
+			defaultValue: '',
+			validate: { notEmpty: { msg: 'Title cannot be blank' } }
+		},
+		content: {
+			type: DataTypes.STRING,
+			defaultValue: '',
 		}
-		, data: DataTypes.TEXT
-	});
+	}, {
+			classMethods: {
+				associate: function (models) {
+					models.Article.belongsTo(models.User, {
+						onDelete: 'CASCADE',
+					});
+				}
+			}
+		});
 };

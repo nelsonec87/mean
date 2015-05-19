@@ -13,17 +13,15 @@ var errorHandler = require('./errors.server.controller'),
  * Create a article
  */
 exports.create = function (req, res) {
-	var article = new Article(req.body);
-	article.user = req.user;
+	var article = Article.build(req.body);
+	article.UserId = req.user.id;
 
-	article.save(function (err) {
-		if (err) {
-			return res.status(400).send({
-				message: errorHandler.getErrorMessage(err)
-			});
-		} else {
-			res.json(article);
-		}
+	article.save().then(function () {
+		res.json(article);
+	}).catch(function (err) {
+		return res.status(400).send({
+			message: errorHandler.getErrorMessage(err)
+		});
 	});
 };
 
@@ -42,14 +40,12 @@ exports.update = function (req, res) {
 
 	article = _.extend(article, req.body);
 
-	article.save(function (err) {
-		if (err) {
-			return res.status(400).send({
-				message: errorHandler.getErrorMessage(err)
-			});
-		} else {
-			res.json(article);
-		}
+	article.save().then(function () {
+		res.json(article);
+	}).catch(function (err) {
+		return res.status(400).send({
+			message: errorHandler.getErrorMessage(err)
+		});
 	});
 };
 
@@ -59,14 +55,12 @@ exports.update = function (req, res) {
 exports.delete = function (req, res) {
 	var article = req.article;
 
-	article.remove(function (err) {
-		if (err) {
-			return res.status(400).send({
-				message: errorHandler.getErrorMessage(err)
-			});
-		} else {
-			res.json(article);
-		}
+	article.destroy().then(function () {
+		res.json(article);
+	}).catch(function (err) {
+		return res.status(400).send({
+			message: errorHandler.getErrorMessage(err)
+		});
 	});
 };
 
@@ -74,14 +68,15 @@ exports.delete = function (req, res) {
  * List of Articles
  */
 exports.list = function (req, res) {
-	Article.find().sort('-created').populate('user', 'displayName').exec(function (err, articles) {
-		if (err) {
-			return res.status(400).send({
-				message: errorHandler.getErrorMessage(err)
-			});
-		} else {
-			res.json(articles);
-		}
+	Article.findAll({
+		include: [{ model: db.User, attributes: ['displayName'] }],
+		order: [['createdAt', 'DESC']]
+	}).then(function (articles) {
+		res.json(articles);
+	}).catch(function (err) {
+		return res.status(400).send({
+			message: errorHandler.getErrorMessage(err)
+		});
 	});
 };
 
@@ -89,15 +84,10 @@ exports.list = function (req, res) {
  * Article middleware
  */
 exports.articleByID = function (req, res, next, id) {
-
-	if (!mongoose.Types.ObjectId.isValid(id)) {
-		return res.status(400).send({
-			message: 'Article is invalid'
-		});
-	}
-
-	Article.findById(id).populate('user', 'displayName').exec(function (err, article) {
-		if (err) return next(err);
+	Article.find({
+		where: { id: id },
+		include: [{ model: db.User, attributes: ['displayName'] }]
+	}).then(function (article) {
 		if (!article) {
 			return res.status(404).send({
 				message: 'Article not found'
@@ -105,6 +95,8 @@ exports.articleByID = function (req, res, next, id) {
 		}
 		req.article = article;
 		next();
+	}).catch(function (err) {
+		return next(err);
 	});
 };
 
@@ -112,7 +104,7 @@ exports.articleByID = function (req, res, next, id) {
  * Article authorization middleware
  */
 exports.hasAuthorization = function (req, res, next) {
-	if (req.article.user.id !== req.user.id) {
+	if (req.article.UserId !== req.user.id) {
 		return res.status(403).send({
 			message: 'User is not authorized'
 		});

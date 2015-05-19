@@ -27,7 +27,7 @@ module.exports = function (db) {
 	var sequelizeStore = new SequelizeStore({
 		db: db.sequelize
 	});
-	sequelizeStore.sync();
+//	sequelizeStore.sync();
 	
 	// Initialize express app
 	var app = express();

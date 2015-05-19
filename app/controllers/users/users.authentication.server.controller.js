@@ -40,7 +40,7 @@ exports.signup = function (req, res) {
 		console.error('err', err, 'errjson', JSON.stringify(err));
 		if (err.errors)
 			return res.status(400).send({
-				messages: err.errors.map(function(x){ return x.message; })
+				messages: err.errors.map(function (x) { return x.message; })
 			});
 		else
 			return res.status(400).send({
@@ -123,33 +123,34 @@ exports.saveOAuthUserProfile = function (req, providerUserProfile, done) {
 			$or: [mainProviderSearchQuery, additionalProviderSearchQuery]
 		};
 
-		User.findOne(searchQuery, function (err, user) {
-			if (err) {
-				return done(err);
-			} else {
-				if (!user) {
-					var possibleUsername = providerUserProfile.username || ((providerUserProfile.email) ? providerUserProfile.email.split('@')[0] : '');
+		User.find({
+			where: searchQuery
+		}).then(function (err, user) {
+			if (!user) {
+				var possibleUsername = providerUserProfile.username || ((providerUserProfile.email) ? providerUserProfile.email.split('@')[0] : '');
 
-					User.findUniqueUsername(possibleUsername, null, function (availableUsername) {
-						user = new User({
-							firstName: providerUserProfile.firstName,
-							lastName: providerUserProfile.lastName,
-							username: availableUsername,
-							displayName: providerUserProfile.displayName,
-							email: providerUserProfile.email,
-							provider: providerUserProfile.provider,
-							providerData: providerUserProfile.providerData
-						});
-
-						// And save the user
-						user.save(function (err) {
-							return done(err, user);
-						});
+				User.findUniqueUsername(possibleUsername, null, function (availableUsername) {
+					user = User.build({
+						firstName: providerUserProfile.firstName,
+						lastName: providerUserProfile.lastName,
+						username: availableUsername,
+						displayName: providerUserProfile.displayName,
+						email: providerUserProfile.email,
+						provider: providerUserProfile.provider,
+						providerData: providerUserProfile.providerData
 					});
-				} else {
-					return done(err, user);
-				}
+
+					// And save the user
+					user.save().catch(function (err) {
+						return done(err, user);
+					});
+				});
+			} else {
+				return done(err, user);
 			}
+		}).catch(function (err) {
+			return done(err);
+
 		});
 	} else {
 		// User is already logged in, join the provider data to the existing user
@@ -165,7 +166,7 @@ exports.saveOAuthUserProfile = function (req, providerUserProfile, done) {
 			user.markModified('additionalProvidersData');
 
 			// And save the user
-			user.save(function (err) {
+			user.save().catch(function (err) {
 				return done(err, user, '/#!/settings/accounts');
 			});
 		} else {
@@ -190,7 +191,7 @@ exports.removeOAuthProvider = function (req, res, next) {
 			user.markModified('additionalProvidersData');
 		}
 
-		user.save(function (err) {
+		user.save().catch(function (err) {
 			if (err) {
 				return res.status(400).send({
 					message: errorHandler.getErrorMessage(err)

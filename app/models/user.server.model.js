@@ -20,6 +20,19 @@ var validateLocalStrategyPassword = function (password) {
 };
 
 /**
+ * A Validation function for roles
+ */
+var validateRoles = function (roles) {
+	if (!Array.isArray(roles))
+		throw new Error('Invalid roles');;
+
+	var allowedRoles = ['user', 'admin'];
+	for (var i in roles)
+		if (!~allowedRoles.indexOf(roles[i]))
+			throw new Error('Invalid roles');
+};
+
+/**
  *	Use TEXT columns as JSON
  */
 var jsonGet = function (property) {
@@ -93,7 +106,7 @@ module.exports = function (sequelize, DataTypes) {
 		providerData: {
 			type: DataTypes.TEXT,
 			get: jsonGet('providerData'),
-			set: jsonSet('providerData') 
+			set: jsonSet('providerData')
 		},
 		additionalProvidersData: {
 			type: DataTypes.TEXT,
@@ -103,16 +116,9 @@ module.exports = function (sequelize, DataTypes) {
 		roles: {
 			type: DataTypes.TEXT,
 			get: jsonGet('roles'),
-			set: jsonSet('roles')
+			set: jsonSet('roles'),
+			validate: { enum: validateRoles }
 		},
-		/*
-		roles: {
-			type: [{
-				type: String,
-				enum: ['user', 'admin']
-			}],
-			default: ['user']
-		},*/
 		/* For reset password */
 		resetPasswordToken: DataTypes.STRING,
 		resetPasswordExpires: DataTypes.DATE
@@ -135,18 +141,14 @@ module.exports = function (sequelize, DataTypes) {
 
 					User.find({
 						username: possibleUsername
-					}).then(function (user, err) {
-
-						//						console.log('check err nao existe');
-						if (!err) {
-							if (!user) {
-								callback(possibleUsername);
-							} else {
-								return User.findUniqueUsername(username,(suffix || 0) + 1, callback);
-							}
+					}).then(function (user) {
+						if (!user) {
+							callback(possibleUsername);
 						} else {
-							callback(null);
+							return User.findUniqueUsername(username,(suffix || 0) + 1, callback);
 						}
+					}).catch(function (err) {
+						callback(null);
 					});
 				}
 			},
